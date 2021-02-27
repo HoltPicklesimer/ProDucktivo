@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Button } from 'react-native';
 import { Text, Card, Input } from 'react-native-elements';
 import { useAuth } from '../contexts/AuthContext';
+import AppHeader from './AppHeader';
 
 function addError(errors, newError) {
    if (errors != '') {
@@ -12,11 +13,11 @@ function addError(errors, newError) {
    return errors;
 }
 
-export default function UpdateProfile(props) {
+export default function UpdateProfile({ navigation, route }) {
    const [email, setEmail] = useState('');
    const [password, setPassword] = useState('');
    const [passwordConfirm, setPasswordConfirm] = useState('');
-   const { currentUser, updateEmail, updatePassword } = useAuth();
+   const { currentUser, updateEmail, updatePassword, logout } = useAuth();
    const [error, setError] = useState('');
    const [loading, setLoading] = useState(false);
 
@@ -35,16 +36,16 @@ export default function UpdateProfile(props) {
       const promises = [];
       setLoading(true);
       setError('');
-      if (email != currentUser.email) {
+      if (email != currentUser?.email) {
          promises.push(updateEmail(email));
       }
       if (password) {
-         promises.push(updateEmail(password));
+         promises.push(updatePassword(password));
       }
 
       Promise.all(promises)
          .then(() => {
-            props.navigate('dashboard');
+            route.params.authNavigate('dashboard');
          })
          .catch(() => {
             setError('Failed to update account.');
@@ -54,8 +55,19 @@ export default function UpdateProfile(props) {
          });
    }
 
+   async function handleLogout() {
+      setError('');
+
+      try {
+         await logout().then(route.params.authNavigate('login'));
+      } catch {
+         setError('Failed to log out.');
+      }
+   }
+
    return (
       <View style={{ width: '100%' }}>
+         <AppHeader navigation={navigation} title='Settings' />
          <Card>
             <Card.Title h2>Update Profile</Card.Title>
             {error !== '' && <Text style={styles.alert}>{error}</Text>}
@@ -64,7 +76,7 @@ export default function UpdateProfile(props) {
                size={300}
                label={'Email'}
                onChangeText={(text) => setEmail(text)}
-               value={currentUser.email}
+               value={currentUser?.email}
             />
             <Input
                size={300}
@@ -82,11 +94,8 @@ export default function UpdateProfile(props) {
             />
             <Button title='Update' onPress={handleSubmit} disabled={loading} />
          </Card>
-         <Text
-            onPress={props.navigate.bind(this, 'dashboard')}
-            style={[styles.bottomText, styles.link]}
-         >
-            Cancel
+         <Text onPress={handleLogout} style={styles.link}>
+            Log Out
          </Text>
       </View>
    );
@@ -108,5 +117,7 @@ const styles = StyleSheet.create({
    },
    link: {
       color: '#007bff',
+      marginTop: 20,
+      textAlign: 'center',
    },
 });
