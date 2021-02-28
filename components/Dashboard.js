@@ -38,7 +38,6 @@ function indexOf(array, attr, value) {
 LogBox.ignoreLogs(['Setting a timer for a long period of time']);
 
 const db = firebase.firestore();
-const tasksRef = db.collection('tasks');
 
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
@@ -49,14 +48,18 @@ export default function Dashboard({ navigation, route }) {
    const [filter, setFilter] = useState('To Do');
 
    useEffect(() => {
-      // readUser();
-      const unsubscribe = tasksRef.onSnapshot((querySnapshot) => {
-         const taskFirestore = querySnapshot.docChanges().map(({ doc }) => {
-            return doc.data();
-         });
+      const unsubscribe = db
+         .collection('users')
+         .doc(currentUser?.email)
+         .collection('tasks')
+         .onSnapshot((querySnapshot) => {
+            let taskFirestore = [];
+            querySnapshot.forEach((doc) => {
+               taskFirestore.push(doc.data());
+            });
 
-         appendTasks(taskFirestore);
-      });
+            appendTasks(taskFirestore);
+         });
       return () => unsubscribe();
    }, []);
 
@@ -92,16 +95,14 @@ export default function Dashboard({ navigation, route }) {
 
    function handleSave(task) {
       const taskIndex = indexOf(tasks, 'id', task.id);
-      if (taskIndex !== -1 && task) {
-         // Update Task
-         let updatedTasks = [...tasks];
-         updatedTasks[taskIndex] = task;
-         setTasks(updatedTasks);
-      } else {
+      if (taskIndex === -1) {
          task.id = getNewID();
-         setTasks([...tasks, task]);
+      }
 
-         tasksRef
+      if (task) {
+         db.collection('users')
+            .doc(currentUser?.email)
+            .collection('tasks')
             .doc(task.id)
             .set(task)
             .then(() => {
@@ -111,6 +112,7 @@ export default function Dashboard({ navigation, route }) {
                console.error('Error writing document: ', error);
             });
       }
+
       setEdit(false);
    }
 
@@ -121,11 +123,19 @@ export default function Dashboard({ navigation, route }) {
 
    function deleteTask(task) {
       const taskIndex = indexOf(tasks, 'id', task.id);
-      if (taskIndex !== -1 && task) {
-         // Delete Task
-         let updatedTasks = [...tasks];
-         updatedTasks.splice(taskIndex, 1);
-         setTasks(updatedTasks);
+
+      if (taskIndex !== -1) {
+         db.collection('users')
+            .doc(currentUser?.email)
+            .collection('tasks')
+            .doc(task.id)
+            .delete()
+            .then(() => {
+               console.log('Document successfully deleted!');
+            })
+            .catch((error) => {
+               console.error('Error deleting document: ', error);
+            });
       }
 
       setEdit(false);
