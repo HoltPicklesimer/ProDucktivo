@@ -5,11 +5,25 @@ import { View, StyleSheet } from 'react-native';
 import { Card, CheckBox, Text } from 'react-native-elements';
 import moment from 'moment';
 
+function shortDateString(date) {
+   return date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear();
+}
+
 export default function Task(props) {
    const [task, setTask] = useState(props.task);
 
-   const today = new Date();
-   const isLate = task.status !== 'Completed' && task.dueDate < today;
+   const now = new Date();
+
+   // Get the instance of the due date
+   let dueDate = new Date(props.date);
+   dueDate.setHours(props.task.dueDate.getHours(), 0, 0);
+   dueDate.setMinutes(props.task.dueDate.getMinutes(), 0, 0);
+
+   // Get the instance of the status
+   const status = task.status.find(
+      (s) => s.date === shortDateString(props.date)
+   ) || { status: 'Not Started', date: props.date };
+   const isLate = status.status !== 'Completed' && dueDate < now;
 
    useEffect(() => {
       setTask(props.task);
@@ -19,26 +33,24 @@ export default function Task(props) {
       <Card style={styles.task}>
          <View style={{ flexDirection: 'row', marginRight: 10 }}>
             <CheckBox
-               checked={task.status === 'Completed'}
+               checked={status.status === 'Completed'}
                Component={TouchableWithoutFeedback}
             />
             <Text h4>{task.title}</Text>
          </View>
 
          <View style={styles.taskDetails}>
-            <Text>
-               Due: {moment(task.dueDate).format('MMMM D, YYYY h:mm A')}
-            </Text>
+            <Text>Due: {moment(dueDate).format('MMMM D, YYYY h:mm A')}</Text>
             <Card.Divider style={{ marginBottom: 0 }} />
             <Text
                style={
                   (isLate && styles.late) ||
-                  (task.status === 'Completed' && styles.completed) ||
-                  (task.status === 'Started' && styles.started) ||
-                  (task.status === 'Not Started' && styles.notStarted)
+                  (status.status === 'Completed' && styles.completed) ||
+                  (status.status === 'Started' && styles.started) ||
+                  (status.status === 'Not Started' && styles.notStarted)
                }
             >
-               ({(isLate && 'Late') || task.status})
+               ({(isLate && 'Late') || status.status})
             </Text>
 
             <View style={{ maxHeight: 36, overflow: 'hidden' }}>
@@ -47,7 +59,21 @@ export default function Task(props) {
          </View>
 
          <View style={styles.buttonContainer}>
-            <Button color='#00cf41' title='Start Task' />
+            {status.status !== 'Completed' && (
+               <Button
+                  color='#00cf41'
+                  title={
+                     status.status === 'Not Started'
+                        ? 'Start Task'
+                        : 'Complete Task'
+                  }
+                  onPress={props.updateStatus.bind(
+                     this,
+                     task,
+                     shortDateString(dueDate)
+                  )}
+               />
+            )}
             <Button
                title='View Task'
                onPress={props.editTask.bind(this, task)}

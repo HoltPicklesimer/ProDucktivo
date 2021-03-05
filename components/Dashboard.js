@@ -15,10 +15,9 @@ import Duck from '../assets/duck1.png';
 import EditTask from './Tasks/EditTask';
 import { Picker } from '@react-native-community/picker';
 import TaskList from './Tasks/TaskList';
-import AsyncStorage from '@react-native-community/async-storage';
 import * as firebase from 'firebase';
 import 'firebase/firestore';
-import app from '../firebase';
+import Spinner from 'react-native-loading-spinner-overlay';
 
 Date.prototype.addDays = function (days) {
    var date = new Date(this.valueOf());
@@ -43,15 +42,24 @@ export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
    const { currentUser } = useAuth();
+   // const currentUser = { email: 'b@b.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('To Do');
+   const [loading, setLoading] = useState(false);
+   const [userInfo, setUserInfo] = useState({
+      level: 1,
+      points: 0,
+      totalTasks: 0,
+      totalTime: 0,
+   });
 
    useEffect(() => {
+      setLoading(true);
       const unsubscribe = db
          .collection('users')
          .doc(currentUser?.email)
-         .collection('tasks')
+         .collection('tasks') // To do: Make this a property of the user
          .onSnapshot((querySnapshot) => {
             let taskFirestore = [];
             querySnapshot.forEach((doc) => {
@@ -60,6 +68,14 @@ export default function Dashboard({ navigation, route }) {
 
             appendTasks(taskFirestore);
          });
+
+      db.collection('users').onSnapshot((querySnapshot) => {
+         querySnapshot.forEach((doc) => {
+            if (doc.id === currentUser?.email) {
+               setUserInfo(doc.data());
+            }
+         });
+      });
       return () => unsubscribe();
    }, []);
 
@@ -71,6 +87,7 @@ export default function Dashboard({ navigation, route }) {
                return task;
             })
          );
+         setLoading(false);
       },
       [tasks]
    );
@@ -80,21 +97,26 @@ export default function Dashboard({ navigation, route }) {
       setEditedTask(null);
    }
 
+   function editTask(task) {
+      setEdit(true);
+      setEditedTask(task);
+   }
+
    function getNewID() {
       let max = 1;
       tasks.map((task) => {
-         console.log(task.id);
          if (Number(task.id) >= max) {
             max = Number(task.id) + 1;
-            console.log(max);
          }
       });
 
       return String(max);
    }
 
-   function handleSave(task) {
+   function updateTask(task) {
       const taskIndex = indexOf(tasks, 'id', task.id);
+      setLoading(true);
+
       if (taskIndex === -1) {
          task.id = getNewID();
       }
@@ -110,19 +132,18 @@ export default function Dashboard({ navigation, route }) {
             })
             .catch((error) => {
                console.error('Error writing document: ', error);
+            })
+            .finally(() => {
+               setLoading(false);
             });
       }
 
       setEdit(false);
    }
 
-   function editTask(task) {
-      setEdit(true);
-      setEditedTask(task);
-   }
-
    function deleteTask(task) {
       const taskIndex = indexOf(tasks, 'id', task.id);
+      setLoading(true);
 
       if (taskIndex !== -1) {
          db.collection('users')
@@ -135,19 +156,96 @@ export default function Dashboard({ navigation, route }) {
             })
             .catch((error) => {
                console.error('Error deleting document: ', error);
+            })
+            .finally(() => {
+               setLoading(false);
             });
       }
 
       setEdit(false);
    }
 
+   function updateStatus(task, date) {
+      setLoading(true);
+      const statusIndex = indexOf(task.status, 'date', date);
+
+      if (statusIndex !== -1) {
+         // The task status exists for the date (has been started)
+         task.status[statusIndex] = { status: 'Completed', date: date };
+      } else {
+         // The task status does not exist (so it has not been started)
+         task.status.push({ status: 'Started', date: date });
+      }
+
+      if (task) {
+         db.collection('users')
+            .doc(currentUser?.email)
+            .collection('tasks')
+            .doc(task.id)
+            .set(task)
+            .then(() => {
+               console.log('Document successfully written!');
+            })
+            .catch((error) => {
+               console.error('Error writing document: ', error);
+            })
+            .finally(() => {
+               console.log(task);
+               console.log(statusIndex);
+               console.log(task.status[statusIndex]);
+               // If completing the task, add points to the user
+               if (task.status[statusIndex].status === 'Completed') {
+                  console.log('Yes');
+                  addPoints(task);
+               } else {
+                  setLoading(false);
+               }
+            });
+      }
+   }
+
+   function addPoints(task) {
+      if (task && userInfo) {
+         let newUserInfo = userInfo;
+         newUserInfo.points +=
+            task.difficulty === 'Easy'
+               ? 10
+               : task.difficulty === 'Medium'
+               ? 20
+               : 30;
+         if (newUserInfo.points >= newUserInfo.level * 100) {
+            newUserInfo.level++;
+            newUserInfo.points -= newUserInfo.level * 100;
+         }
+         newUserInfo.totalTasks += 1;
+         setUserInfo(newUserInfo);
+         db.collection('users')
+            .doc(currentUser?.email)
+            .set(userInfo)
+            .then(() => {
+               console.log('User info successfully written!');
+            })
+            .catch((error) => {
+               console.error('Error writing user info: ', error);
+            })
+            .finally(() => {
+               setLoading(false);
+            });
+      }
+   }
+
    return (
       <View style={{ width: '100%', flex: 1 }}>
+         <Spinner
+            visible={loading}
+            textContent={'Loading...'}
+            textStyle={styles.spinnerTextStyle}
+         />
          <AppHeader navigation={navigation} title='Tasks' />
          <Modal visible={edit} animationType='slide' transparent>
             <EditTask
                handleClose={handleEdit}
-               handleSave={handleSave}
+               handleSave={updateTask}
                deleteTask={deleteTask}
                task={editedTask}
             />
@@ -158,8 +256,10 @@ export default function Dashboard({ navigation, route }) {
                {error !== '' && <Text style={styles.alert}>{error}</Text>}
                <Image source={Duck} style={styles.avatar} />
                <View style={{ alignItems: 'center', marginBottom: 15 }}>
-                  <Text>Level 1</Text>
-                  <Text>99/1024</Text>
+                  <Text>Level {userInfo?.level}</Text>
+                  <Text>
+                     {userInfo?.points}/{userInfo?.level * 100}
+                  </Text>
                </View>
                <View style={{ marginBottom: 10 }}>
                   <Button title='Add Task' onPress={handleEdit} />
@@ -182,7 +282,11 @@ export default function Dashboard({ navigation, route }) {
                   </View>
                </View>
                <Card.Divider />
-               <TaskList tasks={tasks} editTask={editTask} />
+               <TaskList
+                  tasks={tasks}
+                  editTask={editTask}
+                  updateStatus={updateStatus}
+               />
             </Card>
          </ScrollView>
       </View>
@@ -207,5 +311,8 @@ const styles = StyleSheet.create({
    cardTitle: {
       flex: 1,
       textAlign: 'left',
+   },
+   spinnerTextStyle: {
+      color: '#fff',
    },
 });
