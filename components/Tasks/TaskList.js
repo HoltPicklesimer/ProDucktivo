@@ -11,7 +11,11 @@ Date.prototype.addDays = function (days) {
    return date;
 };
 
-export default function TaskList({ tasks, editTask, updateStatus }) {
+function shortDateString(date) {
+   return date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear();
+}
+
+export default function TaskList({ tasks, editTask, updateStatus, filter }) {
    const filteredTasks = filterTasks(tasks);
 
    function filterTasks(tasks) {
@@ -37,7 +41,7 @@ export default function TaskList({ tasks, editTask, updateStatus }) {
       );
    }
 
-   function checkTaskDate(task, date) {
+   function checkTaskDate(task, date, filter) {
       switch (task.occurrence) {
          case 'Once':
             return datesMatch(task.dueDate, date);
@@ -56,6 +60,18 @@ export default function TaskList({ tasks, editTask, updateStatus }) {
       }
    }
 
+   function checkFilter(task, date) {
+      const status = task.status.find((s) => s.date === shortDateString(date));
+
+      return (
+         filter === 'All' ||
+         (filter === 'To Do' && !status?.statusUpdates?.completed) ||
+         (filter === 'Started' && status?.statusUpdates?.started) ||
+         (filter === 'Not Started' && status?.statusUpdates?.started) ||
+         (filter === 'Completed' && status?.statusUpdates?.completed)
+      );
+   }
+
    // Get each date the user has a task
    function getUniqueDates() {
       let savedDates = [];
@@ -63,7 +79,12 @@ export default function TaskList({ tasks, editTask, updateStatus }) {
       for (let i = 0; i <= 30; i++) {
          const currentDate = new Date().addDays(i);
 
-         if (filteredTasks.find((t) => checkTaskDate(t, currentDate))) {
+         if (
+            filteredTasks.find(
+               (t) =>
+                  checkTaskDate(t, currentDate) && checkFilter(t, currentDate)
+            )
+         ) {
             savedDates.push(currentDate);
          }
       }
@@ -85,7 +106,11 @@ export default function TaskList({ tasks, editTask, updateStatus }) {
                   <Card.Divider style={{ marginBottom: 0 }} />
                   <View style={{ marginBottom: 30 }}>
                      {filteredTasks
-                        .filter((task) => checkTaskDate(task, date))
+                        .filter(
+                           (task) =>
+                              checkTaskDate(task, date) &&
+                              checkFilter(task, date)
+                        )
                         .sort((a, b) => a.dueDate - b.dueDate)
                         .map((task, index) => (
                            <Task

@@ -45,7 +45,7 @@ export default function Dashboard({ navigation, route }) {
    const currentUser = { email: 'b@b.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
-   const [filter, setFilter] = useState('To Do');
+   const [filter, setFilter] = useState('All');
    const [loading, setLoading] = useState(false);
    const [userInfo, setUserInfo] = useState({
       level: 1,
@@ -286,11 +286,11 @@ export default function Dashboard({ navigation, route }) {
                         selectedValue={filter}
                         onValueChange={(value) => setFilter(value)}
                      >
+                        <Picker.Item label='All' value='All' />
                         <Picker.Item label='To Do' value='To Do' />
                         <Picker.Item label='Started' value='Started' />
                         <Picker.Item label='Not Started' value='Not Started' />
                         <Picker.Item label='Completed' value='Completed' />
-                        <Picker.Item label='All' value='All' />
                      </Picker>
                   </View>
                </View>
@@ -299,6 +299,7 @@ export default function Dashboard({ navigation, route }) {
                   tasks={tasks}
                   editTask={editTask}
                   updateStatus={updateStatus}
+                  filter={filter}
                />
             </Card>
          </ScrollView>

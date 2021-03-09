@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Button } from 'react-native';
+import { View, StyleSheet, Button, Modal } from 'react-native';
 import {
    Card,
    Input,
@@ -27,14 +27,51 @@ export default function EditTask(props) {
       status: props?.task?.status || [],
    });
    const [datePickerVisible, setdatePickerVisible] = useState(false);
+   const [deleteVisible, setDeleteVisible] = useState(false);
 
    function setDate(date) {
       setTask({ ...task, dueDate: date });
       setdatePickerVisible(false);
    }
 
+   function handleDeleteTask() {
+      props.deleteTask(task);
+   }
+
    return (
       <Card>
+         <Modal visible={deleteVisible} animationType='slide' transparent>
+            <Card>
+               <View style={{ height: 200, justifyContent: 'space-between' }}>
+                  <Card.Title style={{ margin: 45 }}>
+                     Are you sure you want to delete this task?
+                  </Card.Title>
+                  <View
+                     style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-around',
+                     }}
+                  >
+                     <Button
+                        title='Delete'
+                        onPress={() => {
+                           handleDeleteTask();
+                           setDeleteVisible(false);
+                        }}
+                        color='#f54542'
+                        style={styles.button}
+                     />
+                     <Button
+                        title='Cancel'
+                        onPress={() => {
+                           setDeleteVisible(false);
+                        }}
+                        style={styles.button}
+                     />
+                  </View>
+               </View>
+            </Card>
+         </Modal>
          <Card.Title h3>Edit Task</Card.Title>
          <Card.Divider />
          <Input
@@ -105,7 +142,7 @@ export default function EditTask(props) {
                <Button
                   title='Delete'
                   color='#f54542'
-                  onPress={props.deleteTask.bind(this, task)}
+                  onPress={() => setDeleteVisible(true)}
                />
             </View>
             <View style={styles.button}>
