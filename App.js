@@ -8,7 +8,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppDrawer from './components/AppDrawer';
 
 export default function App() {
-   const [screen, setScreen] = useState('login');
+   const [screen, setScreen] = useState('dashboard');
 
    function navigate(toScreen) {
       setScreen(toScreen);

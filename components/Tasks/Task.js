@@ -22,8 +22,8 @@ export default function Task(props) {
    // Get the instance of the status
    const status = task.status.find(
       (s) => s.date === shortDateString(props.date)
-   ) || { status: 'Not Started', date: props.date };
-   const isLate = status.status !== 'Completed' && dueDate < now;
+   );
+   const isLate = !status?.statusUpdates?.completed && dueDate < now;
 
    useEffect(() => {
       setTask(props.task);
@@ -33,7 +33,7 @@ export default function Task(props) {
       <Card style={styles.task}>
          <View style={{ flexDirection: 'row', marginRight: 10 }}>
             <CheckBox
-               checked={status.status === 'Completed'}
+               checked={status?.statusUpdates?.completed === 'Completed'}
                Component={TouchableWithoutFeedback}
             />
             <Text h4>{task.title}</Text>
@@ -45,12 +45,19 @@ export default function Task(props) {
             <Text
                style={
                   (isLate && styles.late) ||
-                  (status.status === 'Completed' && styles.completed) ||
-                  (status.status === 'Started' && styles.started) ||
-                  (status.status === 'Not Started' && styles.notStarted)
+                  (status?.statusUpdates?.completed && styles.completed) ||
+                  (status?.statusUpdates?.started && styles.started) ||
+                  styles.notStarted
                }
             >
-               ({(isLate && 'Late') || status.status})
+               {/* Display the status or if it is late*/}(
+               {(isLate && 'Late') ||
+                  (status?.statusUpdates?.completed
+                     ? 'Completed'
+                     : status?.statusUpdates?.started
+                     ? 'Started'
+                     : 'Not Started')}
+               )
             </Text>
 
             <View style={{ maxHeight: 36, overflow: 'hidden' }}>
@@ -59,13 +66,13 @@ export default function Task(props) {
          </View>
 
          <View style={styles.buttonContainer}>
-            {status.status !== 'Completed' && (
+            {!status?.statusUpdates?.completed && (
                <Button
                   color='#00cf41'
                   title={
-                     status.status === 'Not Started'
-                        ? 'Start Task'
-                        : 'Complete Task'
+                     status?.statusUpdates?.started
+                        ? 'Complete Task'
+                        : 'Start Task'
                   }
                   onPress={props.updateStatus.bind(
                      this,

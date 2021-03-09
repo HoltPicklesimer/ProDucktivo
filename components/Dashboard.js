@@ -41,8 +41,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   const { currentUser } = useAuth();
-   // const currentUser = { email: 'b@b.com' };
+   // const { currentUser } = useAuth();
+   const currentUser = { email: 'b@b.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('To Do');
@@ -72,7 +72,9 @@ export default function Dashboard({ navigation, route }) {
       db.collection('users').onSnapshot((querySnapshot) => {
          querySnapshot.forEach((doc) => {
             if (doc.id === currentUser?.email) {
-               setUserInfo(doc.data());
+               if (doc.data().level) {
+                  setUserInfo(doc.data());
+               }
             }
          });
       });
@@ -171,10 +173,19 @@ export default function Dashboard({ navigation, route }) {
 
       if (statusIndex !== -1) {
          // The task status exists for the date (has been started)
-         task.status[statusIndex] = { status: 'Completed', date: date };
+         task.status[statusIndex] = {
+            date: date,
+            statusUpdates: {
+               ...task.status[statusIndex].statusUpdates,
+               completed: new Date(),
+            },
+         };
       } else {
          // The task status does not exist (so it has not been started)
-         task.status.push({ status: 'Started', date: date });
+         task.status.push({
+            date: date,
+            statusUpdates: { started: new Date() },
+         });
       }
 
       if (task) {
@@ -190,13 +201,9 @@ export default function Dashboard({ navigation, route }) {
                console.error('Error writing document: ', error);
             })
             .finally(() => {
-               console.log(task);
-               console.log(statusIndex);
-               console.log(task.status[statusIndex]);
                // If completing the task, add points to the user
-               if (task.status[statusIndex].status === 'Completed') {
-                  console.log('Yes');
-                  addPoints(task);
+               if (task.status[statusIndex].statusUpdates.completed) {
+                  addPoints(task, task.status[statusIndex]);
                } else {
                   setLoading(false);
                }
@@ -204,7 +211,7 @@ export default function Dashboard({ navigation, route }) {
       }
    }
 
-   function addPoints(task) {
+   function addPoints(task, status) {
       if (task && userInfo) {
          let newUserInfo = userInfo;
          newUserInfo.points +=
@@ -213,15 +220,21 @@ export default function Dashboard({ navigation, route }) {
                : task.difficulty === 'Medium'
                ? 20
                : 30;
+         // Gain a level and start points at 0, but
+         // carry over points
          if (newUserInfo.points >= newUserInfo.level * 100) {
-            newUserInfo.level++;
             newUserInfo.points -= newUserInfo.level * 100;
+            newUserInfo.level++;
          }
          newUserInfo.totalTasks += 1;
-         setUserInfo(newUserInfo);
+         const timeToComplete =
+            status.statusUpdates.completed -
+            status.statusUpdates.started.toDate();
+         newUserInfo.totalTime += timeToComplete;
+
          db.collection('users')
             .doc(currentUser?.email)
-            .set(userInfo)
+            .set(newUserInfo)
             .then(() => {
                console.log('User info successfully written!');
             })

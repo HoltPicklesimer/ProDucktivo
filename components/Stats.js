@@ -8,6 +8,14 @@ import { useAuth } from '../contexts/AuthContext';
 
 const db = firebase.firestore();
 
+function getTimeUnits(time) {
+   const n = time / 1000;
+   const days = Math.round(n / (24 * 3600));
+   const hours = Math.round((n % (24 * 3600)) / 3600);
+   const minutes = Math.round((n % (24 * 3600 * 3600)) / 60);
+   return days + ' days, ' + hours + ' hours, ' + minutes + ' minutes';
+}
+
 export default function Stats(props) {
    const [userInfo, setUserInfo] = useState({
       level: 1,
@@ -15,8 +23,8 @@ export default function Stats(props) {
       totalTasks: 0,
       totalTime: 0,
    });
-   // const currentUser = { email: 'b@b.com' };
-   const { currentUser } = useAuth();
+   const currentUser = { email: 'b@b.com' };
+   // const { currentUser } = useAuth();
 
    const pointsToNextLevel = userInfo?.level * 100 - userInfo?.points;
 
@@ -24,7 +32,9 @@ export default function Stats(props) {
       const unsubscribe = db.collection('users').onSnapshot((querySnapshot) => {
          querySnapshot.forEach((doc) => {
             if (doc.id === currentUser?.email) {
-               setUserInfo(doc.data());
+               if (doc.data().level) {
+                  setUserInfo(doc.data());
+               }
             }
          });
       });
@@ -39,18 +49,38 @@ export default function Stats(props) {
             <Card.Title h3>{currentUser?.email}</Card.Title>
             <Image source={Duck} style={styles.avatar} />
             <View style={{ alignItems: 'center', marginBottom: 15 }}>
-               <Text>Level {userInfo?.level}</Text>
-               <Text>
+               <Text h3>Level {userInfo?.level}</Text>
+               <Text h4>
                   {userInfo?.points}/{userInfo?.level * 100}
                </Text>
-               <View style={{ textAlign: 'left' }}>
-                  <Text>{pointsToNextLevel} points until the next Level!</Text>
-                  <Text>Total Tasks: {userInfo?.totalTasks}</Text>
-                  <Text>Total Time: {userInfo?.totalTime}</Text>
-                  {userInfo?.totalTime !== 0 && (
-                     <Text>
-                        Average Time to Complete a Task:{' '}
-                        {userInfo?.totalTasks / userInfo?.totalTime}
+               <Text>{pointsToNextLevel} points until the next Level!</Text>
+               <View
+                  style={{
+                     borderTopColor: 'lightgray',
+                     borderTopWidth: 1,
+                     marginTop: 10,
+                     paddingTop: 10,
+                  }}
+               >
+                  <Text style={{ flexDirection: 'row', textAlign: 'center' }}>
+                     <Text style={{ fontWeight: 'bold' }}>Total Tasks: </Text>
+                     <Text>{userInfo?.totalTasks}</Text>
+                  </Text>
+
+                  <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                     Total Task Time:
+                  </Text>
+                  <Text style={{ textAlign: 'center' }}>
+                     {getTimeUnits(userInfo?.totalTime)}
+                  </Text>
+                  <Text style={{ fontWeight: 'bold', textAlign: 'center' }}>
+                     Average Time to Complete a Task:
+                  </Text>
+                  {userInfo?.totalTasks !== 0 && (
+                     <Text style={{ textAlign: 'center' }}>
+                        {getTimeUnits(
+                           userInfo?.totalTime / userInfo?.totalTasks
+                        )}
                      </Text>
                   )}
                </View>
