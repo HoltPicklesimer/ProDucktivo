@@ -28,8 +28,6 @@ export default function Login(props) {
       } catch {
          setError('Failed to log in.');
       }
-
-      setLoading(false);
    }
 
    return (

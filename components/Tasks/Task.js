@@ -26,7 +26,7 @@ export default function Task(props) {
    const isLate = !status?.statusUpdates?.completed && dueDate < now;
 
    useEffect(() => {
-      setTask(props.task);
+      return setTask(props.task);
    }, [props.task]);
 
    return (

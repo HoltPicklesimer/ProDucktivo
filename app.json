@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "producktivo",
+    "name": "Producktivo",
     "slug": "producktivo",
-    "version": "1.0.0",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/duck2.png",
     "splash": {
@@ -17,16 +17,20 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pickleco.producktivo"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/duck2.png",
         "backgroundColor": "#FFFFFF"
-      }
+      },
+      "package": "com.pickleco.producktivo",
+      "permissions": [],
+      "versionCode": 4
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/duck2.png"
     }
   }
 }

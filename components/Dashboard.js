@@ -41,8 +41,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   // const { currentUser } = useAuth();
-   const currentUser = { email: 'b@b.com' };
+   const { currentUser } = useAuth();
+   // const currentUser = { email: 'duck@duck.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('All');
@@ -59,7 +59,7 @@ export default function Dashboard({ navigation, route }) {
       const unsubscribe = db
          .collection('users')
          .doc(currentUser?.email)
-         .collection('tasks') // To do: Make this a property of the user
+         .collection('tasks')
          .onSnapshot((querySnapshot) => {
             let taskFirestore = [];
             querySnapshot.forEach((doc) => {
@@ -67,17 +67,18 @@ export default function Dashboard({ navigation, route }) {
             });
 
             appendTasks(taskFirestore);
+
+            db.collection('users').onSnapshot((querySnapshot) => {
+               querySnapshot.forEach((doc) => {
+                  if (doc.id === currentUser?.email) {
+                     if (doc.data().level) {
+                        setUserInfo(doc.data());
+                     }
+                  }
+               });
+            });
          });
 
-      db.collection('users').onSnapshot((querySnapshot) => {
-         querySnapshot.forEach((doc) => {
-            if (doc.id === currentUser?.email) {
-               if (doc.data().level) {
-                  setUserInfo(doc.data());
-               }
-            }
-         });
-      });
       return () => unsubscribe();
    }, []);
 
@@ -202,7 +203,7 @@ export default function Dashboard({ navigation, route }) {
             })
             .finally(() => {
                // If completing the task, add points to the user
-               if (task.status[statusIndex].statusUpdates.completed) {
+               if (task.status[statusIndex].statusUpdates?.completed) {
                   addPoints(task, task.status[statusIndex]);
                } else {
                   setLoading(false);

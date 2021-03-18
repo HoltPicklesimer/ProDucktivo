@@ -3,6 +3,11 @@ import { View, StyleSheet, Button } from 'react-native';
 import { Text, Card, Input } from 'react-native-elements';
 import { useAuth } from '../contexts/AuthContext';
 import AppHeader from './AppHeader';
+import { LogBox } from 'react-native';
+
+LogBox.ignoreLogs([
+   'Non-serializable values were found in the navigation state',
+]);
 
 function addError(errors, newError) {
    if (errors != '') {
