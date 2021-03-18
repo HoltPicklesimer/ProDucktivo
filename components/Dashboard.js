@@ -41,8 +41,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   // const { currentUser } = useAuth();
-   const currentUser = { email: 'duck@duck.com' };
+   const { currentUser } = useAuth();
+   // const currentUser = { email: 'duck@duck.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('All');
@@ -53,84 +53,46 @@ export default function Dashboard({ navigation, route }) {
       totalTasks: 0,
       totalTime: 0,
    });
+   const [showLevelUp, setShowLevelUp] = useState(false);
 
    useEffect(() => {
       setLoading(true);
       console.log('Start');
-      db.collection('users')
-         .doc(currentUser?.email)
-         .get()
-         .then((userData) => {
-            console.log('Retreived user info!');
-            setUserInfo(userData.data());
-         })
-         .catch((error) => {
-            console.error('Error getting user info: ', error);
-         });
+      const unsubscribe = () => {
+         db.collection('users')
+            .doc(currentUser?.email)
+            .get()
+            .then((data) => {
+               console.log('Retreived user info!');
+               const userData = data?.data();
+               if (userData?.level) setUserInfo(userData);
 
-      db.collection('users')
-         .doc(currentUser?.email)
-         .collection('tasks')
-         .get()
-         .then((taskData) => {
-            console.log('Retreived user tasks!');
-            const firestoreTasks = [];
-            taskData.forEach((currentTask) => {
-               let task = currentTask.data();
-               task.dueDate = task.dueDate.toDate();
-               firestoreTasks.push(task);
-            });
-            setTasks(firestoreTasks);
-            setLoading(false);
-         })
-         .catch((error) => {
-            console.error('Error getting user info: ', error);
-         });
+               db.collection('users')
+                  .doc(currentUser?.email)
+                  .collection('tasks')
+                  .get()
+                  .then((taskData) => {
+                     console.log('Retreived user tasks!');
+                     const firestoreTasks = [];
+                     taskData.forEach((currentTask) => {
+                        let task = currentTask.data();
+                        task.dueDate = task.dueDate.toDate();
+                        firestoreTasks.push(task);
+                     });
+                     setTasks(firestoreTasks);
+                  })
+                  .catch((error) => {
+                     console.error('Error getting user info: ', error);
+                  })
+                  .finally(() => setLoading(false));
+            })
+            .catch((error) => {
+               console.error('Error getting user info: ', error);
+            })
+            .finally(() => setLoading(false));
+      };
+      return unsubscribe();
    }, []);
-
-   // useEffect(() => {
-   //    console.log('I am loading bruh');
-   //    setLoading(true);
-   //    const unsubscribe = db
-   //       .collection('users')
-   //       .doc(currentUser?.email)
-   //       .collection('tasks')
-   //       .onSnapshot((querySnapshot) => {
-   //          console.log('OnSnapshot');
-   //          let taskFirestore = [];
-   //          querySnapshot.forEach((doc) => {
-   //             taskFirestore.push(doc.data());
-   //          });
-
-   //          appendTasks(taskFirestore);
-
-   //          db.collection('users').onSnapshot((querySnapshot) => {
-   //             querySnapshot.forEach((doc) => {
-   //                if (doc.id === currentUser?.email) {
-   //                   if (doc.data().level) {
-   //                      setUserInfo(doc.data());
-   //                   }
-   //                }
-   //             });
-   //          });
-   //       });
-
-   //    return () => unsubscribe();
-   // }, []);
-
-   // const appendTasks = useCallback(
-   //    (dbTasks) => {
-   //       console.log('I am loading 2');
-   //       setTasks(
-   //          dbTasks.map((task) => {
-   //             task.dueDate = task.dueDate.toDate();
-   //             return task;
-   //          })
-   //       );
-   //       setLoading(false);
-   //    },
-   //    [tasks]
-   // );
 
    function handleEdit() {
       setEdit(!edit);
@@ -276,6 +238,7 @@ export default function Dashboard({ navigation, route }) {
          if (newUserInfo.points >= newUserInfo.level * 100) {
             newUserInfo.points -= newUserInfo.level * 100;
             newUserInfo.level++;
+            setShowLevelUp(true);
          }
          newUserInfo.totalTasks += 1;
          const timeToComplete =
@@ -306,6 +269,7 @@ export default function Dashboard({ navigation, route }) {
             textStyle={styles.spinnerTextStyle}
          />
          <AppHeader navigation={navigation} title='Tasks' />
+
          <Modal visible={edit} animationType='slide' transparent>
             <EditTask
                handleClose={handleEdit}
@@ -314,6 +278,18 @@ export default function Dashboard({ navigation, route }) {
                task={editedTask}
             />
          </Modal>
+
+         <Modal visible={showLevelUp} animationType='slide' transparent>
+            <Card style={styles.card} containerStyle={styles.card}>
+               <Card.Title>Congratulations! You leveled up!</Card.Title>
+               <Card.Title>You reached</Card.Title>
+               <Text h3 style={{ textAlign: 'center', marginBottom: 20 }}>
+                  Level {userInfo?.level}!
+               </Text>
+               <Button title='Dismiss' onPress={() => setShowLevelUp(false)} />
+            </Card>
+         </Modal>
+
          <ScrollView>
             <Card>
                <Card.Title h2>Hello {currentUser?.email}!</Card.Title>
@@ -379,5 +355,9 @@ const styles = StyleSheet.create({
    },
    spinnerTextStyle: {
       color: '#fff',
+   },
+   card: {
+      width: '80%',
+      alignSelf: 'center',
    },
 });

@@ -23,8 +23,8 @@ export default function Stats(props) {
       totalTasks: 0,
       totalTime: 0,
    });
-   const currentUser = { email: 'duck@duck.com' };
-   // const { currentUser } = useAuth();
+   // const currentUser = { email: 'duck@duck.com' };
+   const { currentUser } = useAuth();
 
    const pointsToNextLevel = userInfo?.level * 100 - userInfo?.points;
 
