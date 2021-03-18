@@ -41,8 +41,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   const { currentUser } = useAuth();
-   // const currentUser = { email: 'duck@duck.com' };
+   // const { currentUser } = useAuth();
+   const currentUser = { email: 'duck@duck.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('All');
@@ -56,44 +56,81 @@ export default function Dashboard({ navigation, route }) {
 
    useEffect(() => {
       setLoading(true);
-      const unsubscribe = db
-         .collection('users')
+      console.log('Start');
+      db.collection('users')
          .doc(currentUser?.email)
-         .collection('tasks')
-         .onSnapshot((querySnapshot) => {
-            let taskFirestore = [];
-            querySnapshot.forEach((doc) => {
-               taskFirestore.push(doc.data());
-            });
-
-            appendTasks(taskFirestore);
-
-            db.collection('users').onSnapshot((querySnapshot) => {
-               querySnapshot.forEach((doc) => {
-                  if (doc.id === currentUser?.email) {
-                     if (doc.data().level) {
-                        setUserInfo(doc.data());
-                     }
-                  }
-               });
-            });
+         .get()
+         .then((userData) => {
+            console.log('Retreived user info!');
+            setUserInfo(userData.data());
+         })
+         .catch((error) => {
+            console.error('Error getting user info: ', error);
          });
 
-      return () => unsubscribe();
+      db.collection('users')
+         .doc(currentUser?.email)
+         .collection('tasks')
+         .get()
+         .then((taskData) => {
+            console.log('Retreived user tasks!');
+            const firestoreTasks = [];
+            taskData.forEach((currentTask) => {
+               let task = currentTask.data();
+               task.dueDate = task.dueDate.toDate();
+               firestoreTasks.push(task);
+            });
+            setTasks(firestoreTasks);
+            setLoading(false);
+         })
+         .catch((error) => {
+            console.error('Error getting user info: ', error);
+         });
    }, []);
 
-   const appendTasks = useCallback(
-      (dbTasks) => {
-         setTasks(
-            dbTasks.map((task) => {
-               task.dueDate = task.dueDate.toDate();
-               return task;
-            })
-         );
-         setLoading(false);
-      },
-      [tasks]
-   );
+   // useEffect(() => {
+   //    console.log('I am loading bruh');
+   //    setLoading(true);
+   //    const unsubscribe = db
+   //       .collection('users')
+   //       .doc(currentUser?.email)
+   //       .collection('tasks')
+   //       .onSnapshot((querySnapshot) => {
+   //          console.log('OnSnapshot');
+   //          let taskFirestore = [];
+   //          querySnapshot.forEach((doc) => {
+   //             taskFirestore.push(doc.data());
+   //          });
+
+   //          appendTasks(taskFirestore);
+
+   //          db.collection('users').onSnapshot((querySnapshot) => {
+   //             querySnapshot.forEach((doc) => {
+   //                if (doc.id === currentUser?.email) {
+   //                   if (doc.data().level) {
+   //                      setUserInfo(doc.data());
+   //                   }
+   //                }
+   //             });
+   //          });
+   //       });
+
+   //    return () => unsubscribe();
+   // }, []);
+
+   // const appendTasks = useCallback(
+   //    (dbTasks) => {
+   //       console.log('I am loading 2');
+   //       setTasks(
+   //          dbTasks.map((task) => {
+   //             task.dueDate = task.dueDate.toDate();
+   //             return task;
+   //          })
+   //       );
+   //       setLoading(false);
+   //    },
+   //    [tasks]
+   // );
 
    function handleEdit() {
       setEdit(!edit);
@@ -132,6 +169,12 @@ export default function Dashboard({ navigation, route }) {
             .set(task)
             .then(() => {
                console.log('Document successfully written!');
+               if (taskIndex === -1) setTasks([...tasks, task]);
+               else {
+                  const updatedTasks = tasks;
+                  updatedTasks[taskIndex] = task;
+                  setTasks(updatedTasks);
+               }
             })
             .catch((error) => {
                console.error('Error writing document: ', error);
@@ -156,6 +199,9 @@ export default function Dashboard({ navigation, route }) {
             .delete()
             .then(() => {
                console.log('Document successfully deleted!');
+               const updatedTasks = tasks;
+               updatedTasks.splice(taskIndex, 1);
+               setTasks(updatedTasks);
             })
             .catch((error) => {
                console.error('Error deleting document: ', error);
@@ -171,13 +217,14 @@ export default function Dashboard({ navigation, route }) {
    function updateStatus(task, date) {
       setLoading(true);
       const statusIndex = indexOf(task.status, 'date', date);
+      const taskIndex = indexOf(tasks, 'id', task.id);
 
       if (statusIndex !== -1) {
          // The task status exists for the date (has been started)
          task.status[statusIndex] = {
             date: date,
             statusUpdates: {
-               ...task.status[statusIndex].statusUpdates,
+               ...task.status[statusIndex]?.statusUpdates,
                completed: new Date(),
             },
          };
@@ -197,13 +244,16 @@ export default function Dashboard({ navigation, route }) {
             .set(task)
             .then(() => {
                console.log('Document successfully written!');
+               const updatedTasks = tasks;
+               updatedTasks[taskIndex] = task;
+               setTasks(updatedTasks);
             })
             .catch((error) => {
                console.error('Error writing document: ', error);
             })
             .finally(() => {
                // If completing the task, add points to the user
-               if (task.status[statusIndex].statusUpdates?.completed) {
+               if (task.status[statusIndex]?.statusUpdates?.completed) {
                   addPoints(task, task.status[statusIndex]);
                } else {
                   setLoading(false);
@@ -229,8 +279,7 @@ export default function Dashboard({ navigation, route }) {
          }
          newUserInfo.totalTasks += 1;
          const timeToComplete =
-            status.statusUpdates.completed -
-            status.statusUpdates.started.toDate();
+            status.statusUpdates.completed - status.statusUpdates.started;
          newUserInfo.totalTime += timeToComplete;
 
          db.collection('users')
@@ -238,6 +287,7 @@ export default function Dashboard({ navigation, route }) {
             .set(newUserInfo)
             .then(() => {
                console.log('User info successfully written!');
+               setUserInfo(newUserInfo);
             })
             .catch((error) => {
                console.error('Error writing user info: ', error);

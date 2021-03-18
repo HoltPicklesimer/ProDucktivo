@@ -13,6 +13,7 @@
     "@react-native-community/picker": "^1.8.1",
     "@react-native-firebase/app": "^10.8.1",
     "@react-native-firebase/database": "^10.8.1",
+    "@react-native-firebase/firestore": "^11.1.2",
     "@react-navigation/drawer": "^5.12.3",
     "@react-navigation/native": "^5.9.2",
     "expo": "~40.0.0",
