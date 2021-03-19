@@ -53,6 +53,7 @@ export default function Signup(props) {
          props.navigate('dashboard');
       } catch {
          setError('Failed to create an account.');
+         setLoading(false);
       }
 
       setLoading(false);

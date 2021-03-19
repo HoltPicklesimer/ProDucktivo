@@ -27,6 +27,7 @@ export default function Login(props) {
          props.navigate('dashboard');
       } catch {
          setError('Failed to log in.');
+         setLoading(false);
       }
    }
 

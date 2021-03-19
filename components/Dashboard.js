@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
    View,
    StyleSheet,
@@ -18,6 +18,10 @@ import TaskList from './Tasks/TaskList';
 import * as firebase from 'firebase';
 import 'firebase/firestore';
 import Spinner from 'react-native-loading-spinner-overlay';
+// import NotificationManager, {
+//    schedulePushNotification,
+//    cancelPushNotification,
+// } from './NotificationManager';
 
 Date.prototype.addDays = function (days) {
    var date = new Date(this.valueOf());
@@ -104,6 +108,15 @@ export default function Dashboard({ navigation, route }) {
       setEditedTask(task);
    }
 
+   // function scheduleNotification(task) {
+   //    const identifier = schedulePushNotification(task);
+   //    return identifier;
+   // }
+
+   // function cancelNotification(identifer) {
+   //    cancelPushNotification(identifer);
+   // }
+
    function getNewID() {
       let max = 1;
       tasks.map((task) => {
@@ -124,6 +137,10 @@ export default function Dashboard({ navigation, route }) {
       }
 
       if (task) {
+         // Cancel the notification if it exists and reschedule
+         // if (task.identifer) cancelNotification(task.identifer);
+         // task.identifer = scheduleNotification(task);
+
          db.collection('users')
             .doc(currentUser?.email)
             .collection('tasks')
@@ -291,6 +308,7 @@ export default function Dashboard({ navigation, route }) {
          </Modal>
 
          <ScrollView>
+            {/* <NotificationManager /> */}
             <Card>
                <Card.Title h2>Hello {currentUser?.email}!</Card.Title>
                {error !== '' && <Text style={styles.alert}>{error}</Text>}
