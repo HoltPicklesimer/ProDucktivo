@@ -25,6 +25,7 @@ export default function EditTask(props) {
       dueDate: props?.task?.dueDate || new Date().addDays(1),
       difficulty: props?.task?.difficulty || 'Easy',
       status: props?.task?.status || [],
+      identifier: props?.task?.identifier,
    });
    const [datePickerVisible, setdatePickerVisible] = useState(false);
    const [deleteVisible, setDeleteVisible] = useState(false);

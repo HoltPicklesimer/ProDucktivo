@@ -18,10 +18,10 @@ import TaskList from './Tasks/TaskList';
 import * as firebase from 'firebase';
 import 'firebase/firestore';
 import Spinner from 'react-native-loading-spinner-overlay';
-// import NotificationManager, {
-//    schedulePushNotification,
-//    cancelPushNotification,
-// } from './NotificationManager';
+import NotificationManager, {
+   schedulePushNotification,
+   cancelPushNotification,
+} from './NotificationManager';
 
 Date.prototype.addDays = function (days) {
    var date = new Date(this.valueOf());
@@ -45,8 +45,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   const { currentUser } = useAuth();
-   // const currentUser = { email: 'duck@duck.com' };
+   // const { currentUser } = useAuth();
+   const currentUser = { email: 'duck@duck.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('All');
@@ -108,14 +108,14 @@ export default function Dashboard({ navigation, route }) {
       setEditedTask(task);
    }
 
-   // function scheduleNotification(task) {
-   //    const identifier = schedulePushNotification(task);
-   //    return identifier;
-   // }
+   function scheduleNotification(task) {
+      const identifier = schedulePushNotification(task);
+      return identifier;
+   }
 
-   // function cancelNotification(identifer) {
-   //    cancelPushNotification(identifer);
-   // }
+   function cancelNotification(identifier) {
+      cancelPushNotification(identifier);
+   }
 
    function getNewID() {
       let max = 1;
@@ -128,7 +128,7 @@ export default function Dashboard({ navigation, route }) {
       return String(max);
    }
 
-   function updateTask(task) {
+   async function updateTask(task) {
       const taskIndex = indexOf(tasks, 'id', task.id);
       setLoading(true);
 
@@ -138,29 +138,32 @@ export default function Dashboard({ navigation, route }) {
 
       if (task) {
          // Cancel the notification if it exists and reschedule
-         // if (task.identifer) cancelNotification(task.identifer);
-         // task.identifer = scheduleNotification(task);
+         if (task.identifier) cancelNotification(task.identifier);
 
-         db.collection('users')
-            .doc(currentUser?.email)
-            .collection('tasks')
-            .doc(task.id)
-            .set(task)
-            .then(() => {
-               console.log('Document successfully written!');
-               if (taskIndex === -1) setTasks([...tasks, task]);
-               else {
-                  const updatedTasks = tasks;
-                  updatedTasks[taskIndex] = task;
-                  setTasks(updatedTasks);
-               }
-            })
-            .catch((error) => {
-               console.error('Error writing document: ', error);
-            })
-            .finally(() => {
-               setLoading(false);
-            });
+         await scheduleNotification(task).then((identifier) => {
+            task.identifier = identifier;
+
+            db.collection('users')
+               .doc(currentUser?.email)
+               .collection('tasks')
+               .doc(task.id)
+               .set(task)
+               .then(() => {
+                  console.log('Document successfully written!');
+                  if (taskIndex === -1) setTasks([...tasks, task]);
+                  else {
+                     const updatedTasks = tasks;
+                     updatedTasks[taskIndex] = task;
+                     setTasks(updatedTasks);
+                  }
+               })
+               .catch((error) => {
+                  console.error('Error writing document: ', error);
+               })
+               .finally(() => {
+                  setLoading(false);
+               });
+         });
       }
 
       setEdit(false);
@@ -310,7 +313,8 @@ export default function Dashboard({ navigation, route }) {
          <ScrollView>
             {/* <NotificationManager /> */}
             <Card>
-               <Card.Title h2>Hello {currentUser?.email}!</Card.Title>
+               <Card.Title h2>Hello</Card.Title>
+               <Card.Title h2>{currentUser?.email}!</Card.Title>
                {error !== '' && <Text style={styles.alert}>{error}</Text>}
                <Image source={Duck} style={styles.avatar} />
                <View style={{ alignItems: 'center', marginBottom: 15 }}>

@@ -77,27 +77,39 @@ export default function NotificationManager() {
 }
 
 export async function schedulePushNotification(task) {
+   let identifier;
    let schedulingOptions = {
       time: task.dueDate,
    };
-   if (task.occurrence !== 'Once')
-      schedulingOptions.repeat =
-         task.occurrence === 'Monthly'
-            ? 30
-            : task.occurrence === 'Weekly'
-            ? 'week'
-            : 'day';
-   const identifier = await Notifications.scheduleNotificationAsync({
-      content: {
-         title: task.title,
-         body: task.description,
-      },
-      schedulingOptions: schedulingOptions,
-   });
+   schedulingOptions.repeat =
+      task.occurrence === 'Monthly'
+         ? 30
+         : task.occurrence === 'Weekly'
+         ? 'week'
+         : 'day';
+
+   if (task.occurrence === 'Once') {
+      identifier = await Notifications.scheduleNotificationAsync({
+         content: {
+            title: task.title,
+            body: task.comments,
+         },
+         trigger: task.dueDate,
+      });
+   } else {
+      identifier = await Notifications.scheduleNotificationAsync({
+         content: {
+            title: task.title,
+            body: task.comments,
+         },
+         schedulingOptions: schedulingOptions,
+      });
+   }
+
    return identifier;
 }
 
-export async function cancelPushNotification(identifer) {
+export async function cancelPushNotification(identifier) {
    await Notifications.cancelScheduledNotificationAsync(identifier);
 }
 
