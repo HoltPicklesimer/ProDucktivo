@@ -78,15 +78,20 @@ export default function NotificationManager() {
 
 export async function schedulePushNotification(task) {
    let identifier;
-   let schedulingOptions = {
-      time: task.dueDate,
-   };
-   schedulingOptions.repeat =
-      task.occurrence === 'Monthly'
-         ? 30
-         : task.occurrence === 'Weekly'
-         ? 'week'
-         : 'day';
+   let trigger = {};
+
+   switch (task.occurrence) {
+      case 'Monthly':
+         trigger.day = task.dueDate.getDate();
+         break;
+      case 'Weekly':
+         trigger.dayOfWeek = task.dueDate.getDay();
+         break;
+   }
+   trigger.hour = task.dueDate.getHours();
+   trigger.minute = task.dueDate.getMinutes();
+   trigger.repeats = true;
+   trigger.type = 'calendar';
 
    if (task.occurrence === 'Once') {
       identifier = await Notifications.scheduleNotificationAsync({
@@ -98,11 +103,12 @@ export async function schedulePushNotification(task) {
       });
    } else {
       identifier = await Notifications.scheduleNotificationAsync({
+         type: 'calendar',
          content: {
             title: task.title,
             body: task.comments,
          },
-         schedulingOptions: schedulingOptions,
+         trigger: trigger,
       });
    }
 

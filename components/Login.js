@@ -40,7 +40,7 @@ export default function Login(props) {
             <Input
                size={300}
                placeholder={'Email'}
-               onChangeText={(text) => setEmail(text)}
+               onChangeText={(text) => setEmail(text.trim())}
             />
             <Input
                size={300}

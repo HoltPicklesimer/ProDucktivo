@@ -18,10 +18,10 @@ import TaskList from './Tasks/TaskList';
 import * as firebase from 'firebase';
 import 'firebase/firestore';
 import Spinner from 'react-native-loading-spinner-overlay';
-import NotificationManager, {
-   schedulePushNotification,
-   cancelPushNotification,
-} from './NotificationManager';
+// import NotificationManager, {
+//    schedulePushNotification,
+//    cancelPushNotification,
+// } from './NotificationManager';
 
 Date.prototype.addDays = function (days) {
    var date = new Date(this.valueOf());
@@ -45,8 +45,8 @@ const db = firebase.firestore();
 export default function Dashboard({ navigation, route }) {
    const [tasks, setTasks] = useState([]);
    const [error, setError] = useState('');
-   // const { currentUser } = useAuth();
-   const currentUser = { email: 'duck@duck.com' };
+   const { currentUser } = useAuth();
+   // const currentUser = { email: 'duck@duck.com' };
    const [edit, setEdit] = useState(false);
    const [editedTask, setEditedTask] = useState(null);
    const [filter, setFilter] = useState('All');
@@ -108,14 +108,14 @@ export default function Dashboard({ navigation, route }) {
       setEditedTask(task);
    }
 
-   function scheduleNotification(task) {
-      const identifier = schedulePushNotification(task);
-      return identifier;
-   }
+   // function scheduleNotification(task) {
+   //    const identifier = schedulePushNotification(task);
+   //    return identifier;
+   // }
 
-   function cancelNotification(identifier) {
-      cancelPushNotification(identifier);
-   }
+   // function cancelNotification(identifier) {
+   //    cancelPushNotification(identifier);
+   // }
 
    function getNewID() {
       let max = 1;
@@ -138,10 +138,10 @@ export default function Dashboard({ navigation, route }) {
 
       if (task) {
          // Cancel the notification if it exists and reschedule
-         if (task.identifier) cancelNotification(task.identifier);
+         // if (task.identifier) cancelNotification(task.identifier);
 
-         await scheduleNotification(task).then((identifier) => {
-            task.identifier = identifier;
+         // await scheduleNotification(task).then((identifier) => {
+         //    task.identifier = identifier;
 
             db.collection('users')
                .doc(currentUser?.email)
