@@ -66,8 +66,10 @@ export default function TaskList({ tasks, editTask, updateStatus, filter }) {
       return (
          filter === 'All' ||
          (filter === 'To Do' && !status?.statusUpdates?.completed) ||
-         (filter === 'Started' && status?.statusUpdates?.started) ||
-         (filter === 'Not Started' && status?.statusUpdates?.started) ||
+         (filter === 'Started' &&
+            status?.statusUpdates?.started &&
+            !status?.statusUpdates?.completed) ||
+         (filter === 'Not Started' && !status?.statusUpdates?.started) ||
          (filter === 'Completed' && status?.statusUpdates?.completed)
       );
    }

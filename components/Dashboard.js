@@ -18,10 +18,6 @@ import TaskList from './Tasks/TaskList';
 import * as firebase from 'firebase';
 import 'firebase/firestore';
 import Spinner from 'react-native-loading-spinner-overlay';
-// import NotificationManager, {
-//    schedulePushNotification,
-//    cancelPushNotification,
-// } from './NotificationManager';
 
 Date.prototype.addDays = function (days) {
    var date = new Date(this.valueOf());
@@ -108,15 +104,6 @@ export default function Dashboard({ navigation, route }) {
       setEditedTask(task);
    }
 
-   // function scheduleNotification(task) {
-   //    const identifier = schedulePushNotification(task);
-   //    return identifier;
-   // }
-
-   // function cancelNotification(identifier) {
-   //    cancelPushNotification(identifier);
-   // }
-
    function getNewID() {
       let max = 1;
       tasks.map((task) => {
@@ -137,33 +124,28 @@ export default function Dashboard({ navigation, route }) {
       }
 
       if (task) {
-         // Cancel the notification if it exists and reschedule
-         // if (task.identifier) cancelNotification(task.identifier);
-
-         // await scheduleNotification(task).then((identifier) => {
-         //    task.identifier = identifier;
-
-            db.collection('users')
-               .doc(currentUser?.email)
-               .collection('tasks')
-               .doc(task.id)
-               .set(task)
-               .then(() => {
-                  console.log('Document successfully written!');
-                  if (taskIndex === -1) setTasks([...tasks, task]);
-                  else {
-                     const updatedTasks = tasks;
-                     updatedTasks[taskIndex] = task;
-                     setTasks(updatedTasks);
-                  }
-               })
-               .catch((error) => {
-                  console.error('Error writing document: ', error);
-               })
-               .finally(() => {
-                  setLoading(false);
-               });
-         });
+         console.log(currentUser.email);
+         console.log(task);
+         db.collection('users')
+            .doc(currentUser?.email)
+            .collection('tasks')
+            .doc(task.id)
+            .set(task)
+            .then(() => {
+               console.log('Document successfully written!');
+               if (taskIndex === -1) setTasks([...tasks, task]);
+               else {
+                  const updatedTasks = tasks;
+                  updatedTasks[taskIndex] = task;
+                  setTasks(updatedTasks);
+               }
+            })
+            .catch((error) => {
+               console.error('Error writing document: ', error);
+            })
+            .finally(() => {
+               setLoading(false);
+            });
       }
 
       setEdit(false);
@@ -311,7 +293,6 @@ export default function Dashboard({ navigation, route }) {
          </Modal>
 
          <ScrollView>
-            {/* <NotificationManager /> */}
             <Card>
                <Card.Title h2>Hello</Card.Title>
                <Card.Title h2>{currentUser?.email}!</Card.Title>

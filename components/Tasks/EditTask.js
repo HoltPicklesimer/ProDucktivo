@@ -25,7 +25,6 @@ export default function EditTask(props) {
       dueDate: props?.task?.dueDate || new Date().addDays(1),
       difficulty: props?.task?.difficulty || 'Easy',
       status: props?.task?.status || [],
-      identifier: props?.task?.identifier,
    });
    const [datePickerVisible, setdatePickerVisible] = useState(false);
    const [deleteVisible, setDeleteVisible] = useState(false);
@@ -139,13 +138,15 @@ export default function EditTask(props) {
                   color='#00cf41'
                />
             </View>
-            <View style={styles.button}>
-               <Button
-                  title='Delete'
-                  color='#f54542'
-                  onPress={() => setDeleteVisible(true)}
-               />
-            </View>
+            {task.id !== -1 && (
+               <View style={styles.button}>
+                  <Button
+                     title='Delete'
+                     color='#f54542'
+                     onPress={() => setDeleteVisible(true)}
+                  />
+               </View>
+            )}
             <View style={styles.button}>
                <Button title='Cancel' onPress={props.handleClose} />
             </View>

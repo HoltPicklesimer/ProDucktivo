@@ -61,6 +61,9 @@ export default function Signup(props) {
 
    return (
       <View style={{ width: '100%' }}>
+         <Text h1 style={{ textAlign: 'center' }}>
+            Producktivo
+         </Text>
          <Card>
             <Card.Title h2>Sign Up</Card.Title>
             {error !== '' && <Text style={styles.alert}>{error}</Text>}

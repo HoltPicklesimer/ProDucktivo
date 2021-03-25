@@ -2,7 +2,7 @@
   "expo": {
     "name": "Producktivo",
     "slug": "producktivo",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/duck4.png",
     "splash": {
@@ -27,7 +27,7 @@
       },
       "package": "com.pickleco.producktivo",
       "permissions": [],
-      "versionCode": 6
+      "versionCode": 7
     },
     "web": {
       "favicon": "./assets/duck4.png"
